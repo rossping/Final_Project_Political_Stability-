@@ -1,0 +1,37 @@
+---
+title: "Final Project Proposal"
+author: "Ross Pingatore"
+date: "10/11/2020"
+output: pdf_document
+---
+# Introduction
+  + Why does political stability vary across the globe? Are some nations innately built upon stability producing institutions while others are doomed, or can instability be triggered even within the most stable regimes? My research project will investigate the factors the produce political stability, or fail to, within the various countries across the globe. 
+
+# The Data   
+  + We will utilizes The World Bank's data set on political stability measured by the absence of violence and terrorism. The time-series data contains 213 countries and provides estimates on political stability from 1996 to 2019. The estimate of political stability ranges from -2.5 (weak stability) to 2.5 (strong stability). The data set also includes standard error of the estimate, the rank of the estimate as well as the number of sources sampled to achieve a given estimate. This data set will then be combined with predictor variables such as: regime type, colonial origin, institutional structure, resource wealth etc. 
+```{r, echo=T}
+library(readxl)
+library(tidyverse)
+stability<-read_excel('stability.xlsx') # arguments with read_excel
+
+stability%>%
+  filter_all(all_vars(.!= '#N/A')) -> stability
+
+pivot_longer(stability, cols = names(stability[,3:ncol(stability)]))
+
+head(stability)
+
+
+```
+```{r}
+hist(as.numeric(stability$`1996...3`[2:nrow(stability)]), main = "Distribution of Political Stability for 1996", xlab = "Estimate of Governance")
+
+
+hist(as.numeric(stability$`2019...123`[2:nrow(stability)]), main = "Distribution of Political Stability for 2019", xlab = "Estimate of Governance")
+```
+
+# Planned Methods and Moving Forward
+  + My first goal is to understand the best predictors of political stability and how those may vary based on regime type, resource wealth etc. I will use step-wise variable selection to start and then build upon that. 
+  + After I feel confident with my included predictor variables and the variation in political stability that they explain, I will begin model building to best fit my training set. 
+  + Once an adequate fit is achieved I will then test numerous machine learning models on my testing set in order to discover the optimal classification rate. Lastly, we will investigate the prediction and classification results to further understand the optimal conditions for political stability. 
+
