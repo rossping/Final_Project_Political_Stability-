@@ -6,6 +6,10 @@
   + Final_Project_Workup_Pingatore.rmd/.pdf contains the final workup, analysis and findings of the research. 
 
 # Introduction 
+ + Why does political stability vary across the globe? Are some nations innately built upon stability producing institutions while others are doomed, or can instability be triggered even within the most stable regimes? My research project will investigate the factors the produce political stability, or fail to, within the various countries across the globe. 
+ 
+  + There is a vast deal of research and theories that investigate the mechansims that produce political stability within a country. Many scholars will argue that the quality of a nations insitutions are responsible for the stability, or lack thereof, that a country enjoys. The difficulty falls in attempting the quatatively prove this theory. What kind of insitutions are we categorizing, how many categories will we have, who will categorize them? The list of problems that would arise from such a task would be insurmountable. With that being said, my research aims to scratch the surface of this goal. The research conducted, utilizes a large N dataset of countries and incorporates more rudemntary predictors suchas GDP and Litteracy rate in order to better understand variation in political stability. Let us be clear however that the predictors in this research are not mechanisms that produce political stability themselves. Metrics suchas a stable GDP are preceeded by the economic insitutions that provide the conditions hospitible for a stable GDP. At most, our research will provide insight into the quality of a states insitutions through our predictor metrics, which will give us some indication into the level of political stability of a country. 
+  
 
 # Background
 
