@@ -1,0 +1,409 @@
+---
+title: "Final_Project_Workup_Pingatore"
+author: "Ross Pingatore"
+date: "12/9/2020"
+output: pdf_document
+---
+# Introduction: Political Stability Across the Globe 
+  + Why does political stability vary across the globe? Are some nations innately built upon stability producing institutions while others are doomed, or can instability be triggered even within the most stable regimes? My research project will investigate the factors the produce political stability, or fail to, within the various countries across the globe. 
+  
+# The Data 
+  + We will utilizes The World Bank's data set on political stability measured by the absence of violence and terrorism. The time-series data contains 213 countries and provides estimates on political stability from 1996 to 2019. The estimate of political stability ranges from -2.5 (weak stability) to 2.5 (strong stability).
+  + The data is combine with additional data from The World Bank the includes predictors: population, fuel exports, military expenditure, ease of conducting business, inflation rate, literacy rate, and access to electricity.
+
+```{r, echo=F, eval=TRUE, message=F}
+library(readxl)
+library(tidyverse)
+stability<-read_excel('stability.xlsx') # arguments with read_excel
+
+stability%>%
+  filter_all(all_vars(.!= '#N/A')) -> stability
+
+
+attach(stability)
+estimate <- c(`1996...3`, `1998...9`, `2000...15`, `2002...21`, `2003...27`, `2004...33`, `2005...39`, `2006...45`, `2007...51`, `2008...57`, `2009...63`, `2010...69`, `2011...75`, `2012...81`, `2013...87`, `2014...93`, `2015...99`, `2016...105`, `2017...111`, `2018...117`, `2019...123`)
+ 
+
+clean_stability <- stability%>%
+  pivot_longer(c(`1996...3`, `1998...9`, `2000...15`, `2002...21`, `2003...27`, `2004...33`, `2005...39`, `2006...45`, `2007...51`, `2008...57`, `2009...63`, `2010...69`, `2011...75`, `2012...81`, `2013...87`, `2014...93`, `2015...99`, `2016...105`, `2017...111`, `2018...117`, `2019...123`), names_to = "year", values_to = "estimate")%>%
+  select(...1,...2,year,estimate)
+
+clean_stability <- clean_stability%>%  
+  rename("country" = ...1, "code" = ...2)
+ 
+# removes starting labels up to row 21 
+
+clean_stability <- clean_stability[22:nrow(clean_stability), ]
+
+count <- 1
+for(year in clean_stability$year){
+  year = substr(year, 1, 4)
+  clean_stability$year[count] <- year
+  count = count + 1
+}
+
+view(clean_stability)
+
+clean_stability$year <- sapply(clean_stability$year, as.numeric)
+
+```
+
+# Reprocessing
+  + The data required a great deal of cleaning and pre-processing. Functions such as pivot-longer and dplyr's join functions were used. 
+```{r}
+head(clean_stability)
+```
+
+# Preliminary Investigation
+```{r, echo=F}
+hist(as.numeric(stability$`1996...3`[2:nrow(stability)]), main = "Distribution of Political Stability for 1996", xlab = "Estimate of Governance")
+```
+# Preliminary Investigation
+```{r, echo=F, message=F}
+hist(as.numeric(stability$`2019...123`[2:nrow(stability)]), main = "Distribution of Political Stability for 2019", xlab = "Estimate of Governance")
+```
+
+# Preliminary Investigation
+
+```{r, echo=F, message=F}
+clean_stability%>%
+  filter(country == "United States")%>%
+  ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability in the U.S. Overtime", x = "Year", y = "Estimate for Political Stability")
+```
+
+# Preliminary Investigation
+```{r, echo=F, message=F}
+clean_stability%>%
+  filter(country == "United Kingdom")%>%
+  ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability in the U.K. Overtime", x = "Year", y = "Estimate for Political Stability")
+```
+
+# Preliminary Investigation
+```{r, echo = F, message=F}
+clean_stability%>%
+  filter(country == "Sweden")%>%
+  ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability in Sweden Overtime", x = "Year", y = "Estimate for Political Stability")
+```
+
+# Preliminary Investigation
+```{r, echo = F, message=F}
+clean_stability%>%
+  filter(country == "Saudi Arabia")%>%
+  ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability in Saudi Arabia Overtime", x = "Year", y = "Estimate for Political Stability")
+
+```
+
+# Preliminary Investigation
+```{r, echo = F, message=F}
+clean_stability%>%
+  filter(country == "Congo, Dem. Rep.")%>%
+  ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability in the Democratic Republic of Congo", x = "Year", y = "Estimate for Political Stability")
+```
+
+# Preliminary Investigation
+```{r, echo = F, message=F}
+clean_stability%>%
+  filter(country == "Russian Federation")%>%
+  ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability for  Russia", x = "Year", y = "Estimate for Political Stability")
+```
+
+# Preliminary Investigation
+```{r,echo=F, message=F}
+clean_stability%>%
+  filter(country == "China")%>%
+  ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability for China", x = "Year", y = "Estimate for Political Stability")
+```
+
+# Adding More Data 
+```{r, echo=F, message=F}
+GDP <- read_csv("gdp.csv", skip = 4)
+
+GDP%>%
+  rename(country = `Country Name`, code = `Country Code`) -> GDP
+
+GDP%>%
+  pivot_longer(c(`1996`, `1998`, `2000`, `2002`, `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`), names_to = "year", values_to = "gdp")%>%
+  select(country, code, year, gdp) -> GDP
+
+GDP$year <- as.numeric(GDP$year)
+
+
+GDP%>%
+  filter_all(all_vars(.!= '#N/A')) -> GDP
+
+full_join(clean_stability, GDP) -> predictor_stability
+
+
+Population <- read_csv("population.csv", skip = 4)
+
+Population%>%
+  rename(country = `Country Name`, code = `Country Code`) -> Population
+
+Population%>%
+  pivot_longer(c(`1996`, `1998`, `2000`, `2002`, `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`), names_to = "year", values_to = "population")%>%
+  select(country, code, year, population) -> Population
+
+Population$year <- as.numeric(Population$year)
+
+left_join(predictor_stability, Population) -> predictor_stability
+
+
+
+fuel_exports <- read_csv("fuel_exports.csv", skip = 4)
+
+fuel_exports%>%
+  rename(country = `Country Name`, code = `Country Code`) -> fuel_exports
+
+fuel_exports%>%
+  pivot_longer(c(`1996`, `1998`, `2000`, `2002`, `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`), names_to = "year", values_to = "fuel_ex")%>%
+  select(country, code, year, fuel_ex) -> fuel_exports
+
+fuel_exports$year <- as.numeric(fuel_exports$year)
+
+full_join(predictor_stability, fuel_exports) -> predictor_stability
+
+
+
+
+military_expend <- read_csv("military_expend.csv", skip = 4)
+
+military_expend%>%
+  rename(country = `Country Name`, code = `Country Code`) -> military_expend
+
+military_expend%>%
+  pivot_longer(c(`1996`, `1998`, `2000`, `2002`, `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`), names_to = "year", values_to = "military_expenditure")%>%
+  select(country, code, year, military_expenditure) -> military_expend
+
+military_expend$year <- as.numeric(military_expend$year)
+
+full_join(predictor_stability, military_expend) -> predictor_stability
+
+
+
+inflation <- read_csv("inflation.csv", skip = 4)
+
+inflation%>%
+  rename(country = `Country Name`, code = `Country Code`) -> inflation
+
+inflation%>%
+  pivot_longer(c(`1996`, `1998`, `2000`, `2002`, `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`), names_to = "year", values_to = "inflation")%>%
+  select(country, code, year, inflation) -> inflation
+
+inflation$year <- as.numeric(inflation$year)
+
+full_join(predictor_stability, inflation) -> predictor_stability
+
+
+literacy_rate <- read_csv("literacy_rate.csv", skip = 4)
+
+literacy_rate%>%
+  rename(country = `Country Name`, code = `Country Code`) -> literacy_rate
+
+literacy_rate%>%
+  pivot_longer(c(`1996`, `1998`, `2000`, `2002`, `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`), names_to = "year", values_to = "lit_rate")%>%
+  select(country, code, year, lit_rate) -> literacy_rate
+
+literacy_rate$year <- as.numeric(literacy_rate$year)
+
+full_join(predictor_stability, literacy_rate) -> predictor_stability
+
+
+
+access_electric <- read_csv("access_to_electric.csv", skip = 4)
+
+access_electric%>%
+  rename(country = `Country Name`, code = `Country Code`) -> access_electric
+
+access_electric%>%
+  pivot_longer(c(`1996`, `1998`, `2000`, `2002`, `2003`, `2004`, `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`), names_to = "year", values_to = "electric_access")%>%
+  select(country, code, year, electric_access) -> access_electric
+
+access_electric$year <- as.numeric(access_electric$year)
+
+full_join(predictor_stability, access_electric) -> predictor_stability
+
+
+
+predictor_stability%>%
+  filter_all(all_vars(.!= '#N/A')) -> predictor_stability
+
+predictor_stability$estimate <- as.numeric(predictor_stability$estimate)
+
+names(predictor_stability)
+```
+
+# Adding More Data
+```{r, echo=F, message=F}
+summary(predictor_stability)
+```
+
+# Further Investigation 
+```{r,echo=F, message=F}
+ggplot(predictor_stability, aes(log(gdp), estimate)) + geom_point() + labs(title = "Political Stability vs. GDP World-Wide", x = "GDP per Capita (US $)", y = "Estimate for Political Stability")
+```
+
+
+# Further Investigation 
+```{r,echo=F, message=F}
+library(ggplot2)
+library(dplyr)
+group_by(predictor_stability, year)%>%
+  summarise_at(vars(estimate), list(stability_estimate = mean))%>%
+  ggplot(aes(x = year, y = stability_estimate)) + geom_point() + geom_smooth(se = F) + labs(title = "Political Stability Overtime World-Wide", x = "Year", " Estimate for Political Stability")
+```
+
+# Further Investigation 
+```{r,echo=F, message=F}
+group_by(predictor_stability, year)%>%
+  summarise_at(vars(gdp), list(gdp_estimate = mean))%>%
+  ggplot(aes(x = year, y = gdp_estimate)) + geom_point() + geom_smooth(se = F) + labs(title = "GDP Overtime World-Wide", x = "Year", y = " Estimate for GDP")
+```
+
+# Further Investigation 
+```{r,echo=F, message=F}
+Population%>%
+  filter_all(all_vars(.!= '#N/A')) -> Population
+
+group_by(Population, year)%>%
+  summarise_at(vars(population), list(pop_estimate = mean))%>%
+  ggplot(aes(x = year, y = pop_estimate)) + geom_point() + geom_smooth(se = F) + labs(title = "Population Overtime World-Wide", x = "Year", y = " Estimate for Population")
+```
+
+# Further Investigation 
+```{r,echo=F, message=F}
+fuel_exports%>%
+  filter_all(all_vars(.!= '#N/A')) -> fuel_exports
+
+group_by(fuel_exports, year)%>%
+  summarise_at(vars(fuel_ex), list(fuel_ex = mean))%>%
+  ggplot(aes(x = year, y = fuel_ex)) + geom_point() + geom_smooth(se = F) + labs(title = "Fuel Exports Overtime World-Wide", x = "Year", y = " Estimate for Fuel Exports")
+```
+
+# Further Investigation 
+```{r ,echo=F, message=F}
+military_expend%>%
+  filter_all(all_vars(.!= '#N/A')) -> military_expend
+
+group_by(military_expend, year)%>%
+  summarise_at(vars(military_expenditure), list(mil_ex = mean))%>%
+  ggplot(aes(x = year, y = mil_ex)) + geom_point() + geom_smooth(se = F) + labs(title = "Military Expenditure Overtime World-Wide", x = "Year", y = " Estimate for Military Spending")
+
+```
+
+# Further Investigation 
+```{r, echo=F, message=F}
+literacy_rate%>%
+  filter_all(all_vars(.!= '#N/A')) -> literacy_rate
+group_by(literacy_rate, year)%>%
+  summarise_at(vars(lit_rate), list(lit_rate = mean))%>%
+  ggplot(aes(x = year, y = lit_rate)) + geom_point() + geom_smooth(se = F) + labs(title = "Literacy Rates Overtime World-Wide", x = "Year", y = " Estimate for Literacy Rates")
+```
+
+# Variable Selection and Model Building
+```{r, echo=F, message=F}
+linear_model <- lm(estimate ~ gdp + population + fuel_ex + military_expenditure + inflation + lit_rate + electric_access, data = predictor_stability)
+summary(linear_model)
+```
+
+# Variable Selection and Model Building
+```{r, echo=F, message=F}
+library(olsrr)
+all_possible <- ols_step_all_possible(linear_model)
+ols_step_best_subset(linear_model)
+```
+# Optimal Linear Model 
+```{r, echo = F, message=F}
+suboptimal_linear_model <- lm(estimate ~ lit_rate + population + inflation, data = predictor_stability)
+optimal_linear_model <- lm(estimate ~ lit_rate, data = predictor_stability)
+summary(optimal_linear_model)
+```
+
+# Lack of Fit Test 
+  + Test assumption of linearity between political stability and literacy.
+  + With a small p-value we may have evidence against linearity. This need to be further investigated. 
+```{r, echo=F, message=F, warning=F}
+attach(predictor_stability)
+reduced <- lm(estimate ~ lit_rate, data = predictor_stability)
+
+full <- lm(estimate ~ as.factor(lit_rate), data = predictor_stability)
+
+anova(reduced, full)
+```
+# Linearity investigation
+```{r, echo=F, message=F, warning=F}
+ggplot(predictor_stability, aes(lit_rate, estimate)) + geom_point() + geom_smooth(se=F, method = lm)
+```
+
+# Linearity investigation
+```{r, echo=F, message=F, warning=F}
+ggplot(predictor_stability, aes(lit_rate, log(estimate))) + geom_point() + geom_smooth(se=F, method = lm)
+```
+
+# Plotting Residuals of Optimal Model
+```{r, echo=F, message=F, warning=F}
+par(mfrow = c(2,2))
+plot(optimal_linear_model)
+```
+# KNN
+```{r, echo=F, message=F, warning=F}
+predictor_stability%>%
+  filter_all(all_vars(.!= '#N/A')) -> predictor_stability
+summary(lit_rate)
+n <- length(predictor_stability$lit_rate)
+lit_rating <- rep("Very Low", n)
+lit_rating[lit_rate > 12.85] = "Low"
+lit_rating[lit_rate > 92.06] = "Standard"
+lit_rating[lit_rate > 95.86] = "High"
+lit_rating[lit_rate > 99.9] = "Very High"
+
+table(lit_rating)
+predictor_stability['lit_rating'] = lit_rating
+```
+# KNN
+```{r, echo=F, message=F, warning=F}
+
+n = length(predictor_stability)
+Z = sample(n, n/2)
+
+stab_training = predictor_stability[Z,]
+stab_testing = predictor_stability[-Z,]
+
+X.training = stab_training[,5:11]
+
+X.testing = stab_testing[,5:11]
+
+
+
+Y.training = lit_rating[Z]
+Y.testing = lit_rating[-Z]
+
+```
+
+#KNN
+  + Our first round when K = 3 gives a classification accuracy rate of 30.06%
+```{r, echo=F, message=F, warning=F}
+set.seed(100)
+library(class)
+knn.results <- knn(X.training, X.testing, Y.training, 3)
+table(Y.testing, knn.results)
+mean(Y.testing == knn.results)
+```
+
+# KNN 
+
++ A loops is then used to test our classification accuracy rate for all values of K from 1 to 20. We find that our optimal K with the highest classification accuracy rate is when K = 1 which gives a classification accuracy rate of 33.12%  
+
+```{r, echo=F, message=F, warning=F}
+set.seed(100)
+class.rate = rep(0,20)
+
+for (K in 1:20) {
+  knn.results = knn(X.training, X.testing, Y.training,K)
+  class.rate[K] = mean(Y.testing == knn.results)
+}
+
+which.max(class.rate)
+max(class.rate)
+```
+```
+
