@@ -10,11 +10,13 @@ output: pdf_document
 # The Data 
   + We will utilizes The World Bank's data set on political stability measured by the absence of violence and terrorism. The time-series data contains 213 countries and provides estimates on political stability from 1996 to 2019. The estimate of political stability ranges from -2.5 (weak stability) to 2.5 (strong stability).
   + The data is combine with additional data from The World Bank the includes predictors: population, fuel exports, military expenditure, ease of conducting business, inflation rate, literacy rate, and access to electricity.
+  
+\newpage
 
 ```{r, echo=F, eval=TRUE, message=F}
 library(readxl)
 library(tidyverse)
-stability<-read_excel('stability.xlsx') # arguments with read_excel
+stability<-read_excel('Data/stability.xlsx') # arguments with read_excel
 
 stability%>%
   filter_all(all_vars(.!= '#N/A')) -> stability
@@ -48,16 +50,20 @@ clean_stability$year <- sapply(clean_stability$year, as.numeric)
 
 ```
 
-# Reprocessing
-  + The data required a great deal of cleaning and pre-processing. Functions such as pivot-longer and dplyr's join functions were used. 
+# Preprocessing
+  + The data required a great deal of cleaning and pre-processing. Functions such as pivot-longer and dplyr's join functions were used to get the data in a useable format. The goal was to have the country, the country code, the year, and the estimate as variables in our dataframe. Our intial cleaned data frame contains 3969 observations with 4 variables. 
 ```{r}
 head(clean_stability)
 ```
 
+\newpage
+
 # Preliminary Investigation
+
 ```{r, echo=F}
 hist(as.numeric(stability$`1996...3`[2:nrow(stability)]), main = "Distribution of Political Stability for 1996", xlab = "Estimate of Governance")
 ```
+
 # Preliminary Investigation
 ```{r, echo=F, message=F}
 hist(as.numeric(stability$`2019...123`[2:nrow(stability)]), main = "Distribution of Political Stability for 2019", xlab = "Estimate of Governance")
@@ -113,10 +119,11 @@ clean_stability%>%
   filter(country == "China")%>%
   ggplot(aes(year, as.numeric(estimate))) + geom_point() + geom_smooth(method = 'lm',se = F) + labs(title = "Political Stability for China", x = "Year", y = "Estimate for Political Stability")
 ```
+\newpage
 
 # Adding More Data 
 ```{r, echo=F, message=F}
-GDP <- read_csv("gdp.csv", skip = 4)
+GDP <- read_csv("Data/gdp.csv", skip = 4)
 
 GDP%>%
   rename(country = `Country Name`, code = `Country Code`) -> GDP
@@ -134,7 +141,7 @@ GDP%>%
 full_join(clean_stability, GDP) -> predictor_stability
 
 
-Population <- read_csv("population.csv", skip = 4)
+Population <- read_csv("Data/population.csv", skip = 4)
 
 Population%>%
   rename(country = `Country Name`, code = `Country Code`) -> Population
@@ -149,7 +156,7 @@ left_join(predictor_stability, Population) -> predictor_stability
 
 
 
-fuel_exports <- read_csv("fuel_exports.csv", skip = 4)
+fuel_exports <- read_csv("Data/fuel_exports.csv", skip = 4)
 
 fuel_exports%>%
   rename(country = `Country Name`, code = `Country Code`) -> fuel_exports
@@ -165,7 +172,7 @@ full_join(predictor_stability, fuel_exports) -> predictor_stability
 
 
 
-military_expend <- read_csv("military_expend.csv", skip = 4)
+military_expend <- read_csv("Data/military_expend.csv", skip = 4)
 
 military_expend%>%
   rename(country = `Country Name`, code = `Country Code`) -> military_expend
@@ -180,7 +187,7 @@ full_join(predictor_stability, military_expend) -> predictor_stability
 
 
 
-inflation <- read_csv("inflation.csv", skip = 4)
+inflation <- read_csv("Data/inflation.csv", skip = 4)
 
 inflation%>%
   rename(country = `Country Name`, code = `Country Code`) -> inflation
@@ -194,7 +201,7 @@ inflation$year <- as.numeric(inflation$year)
 full_join(predictor_stability, inflation) -> predictor_stability
 
 
-literacy_rate <- read_csv("literacy_rate.csv", skip = 4)
+literacy_rate <- read_csv("Data/literacy_rate.csv", skip = 4)
 
 literacy_rate%>%
   rename(country = `Country Name`, code = `Country Code`) -> literacy_rate
@@ -209,7 +216,7 @@ full_join(predictor_stability, literacy_rate) -> predictor_stability
 
 
 
-access_electric <- read_csv("access_to_electric.csv", skip = 4)
+access_electric <- read_csv("Data/access_to_electric.csv", skip = 4)
 
 access_electric%>%
   rename(country = `Country Name`, code = `Country Code`) -> access_electric
@@ -232,10 +239,18 @@ predictor_stability$estimate <- as.numeric(predictor_stability$estimate)
 names(predictor_stability)
 ```
 
-# Adding More Data
 ```{r, echo=F, message=F}
 summary(predictor_stability)
 ```
+
+\newpage
+
+# The New Compiled Data 
+```{r, echo=F, message=F}
+head(predictor_stability)
+```
+
+\newpage
 
 # Further Investigation 
 ```{r,echo=F, message=F}
@@ -299,26 +314,99 @@ group_by(literacy_rate, year)%>%
   ggplot(aes(x = year, y = lit_rate)) + geom_point() + geom_smooth(se = F) + labs(title = "Literacy Rates Overtime World-Wide", x = "Year", y = " Estimate for Literacy Rates")
 ```
 
-# Variable Selection and Model Building
+\newpage
+# Analysis 
+## Variable Selection and Model Building 
 ```{r, echo=F, message=F}
 linear_model <- lm(estimate ~ gdp + population + fuel_ex + military_expenditure + inflation + lit_rate + electric_access, data = predictor_stability)
 summary(linear_model)
 ```
 
-# Variable Selection and Model Building
+## Variable Selection and Model Building with Lasso 
+```{r, echo=F, message=F}
+predictor_stability%>%
+  filter_all(all_vars(.!= '#N/A')) -> predictor_stability
+library(glmnet)
+predictor_vars <- model.matrix(estimate ~ gdp + population + fuel_ex + military_expenditure + inflation + lit_rate + electric_access  , predictor_stability)
+response_var <- predictor_stability$estimate
+lambda <- seq(0,12,0.01)
+
+set.seed(100)
+train = sample(1:nrow(predictor_vars), nrow(predictor_vars)/2)
+x_testing <- (-train)
+
+
+cv <- cv.glmnet(predictor_vars[train,], response_var[train], alpha = 1, lambda = lambda)
+
+optimal_lasso <- glmnet(predictor_vars[train,], response_var[train], alpha = 1, lambda = cv$lambda.min)
+pr <- predict(optimal_lasso, s = cv$lambda.min, newx = predictor_vars[x_testing,])
+
+coef(optimal_lasso)
+
+optimal_lasso_model <- lm(estimate ~ gdp + military_expenditure + lit_rate + electric_access, data = predictor_stability)
+summary(optimal_lasso_model)
+```
+
+## Variable Selection and Model Building with Stepwise Variable Selection 
 ```{r, echo=F, message=F}
 library(olsrr)
 all_possible <- ols_step_all_possible(linear_model)
 ols_step_best_subset(linear_model)
 ```
-# Optimal Linear Model 
+
+## Optimal Linear Model 
+  + Aftering fitting a model with all possible predictors as well as running lasso variable selection and stepwise variable selection, we find that our optimal model was found by our stepwise variable selection method, based on adjusted R2. Our full linear model with all predictors offers an adjusted R2 of 0.2083. Our optimal lasso model offers an adjusted R2 of 0.1059. Lastly, our optimal stepwise model with 5 predictors offers an adjusted R2 of  0.2090. This model surpasses the other adjusted R2, while offering fewer predictor variables than the inital full model. We will consider this our optimal model, containing predictors: population, fuel_ex, inflation, lit_rate, and electric_access.
+  
+  + When we investigate our optimal model, we find that our only positive coefficient is the litteracy rate. This is to say, for every unit increase in the literacy rate of a country, the politcal stability of that country can expect to increase by an average of 0.01774 units. All other coeffecients are negative indicating that for every unit increase in the population, fuel exportation, inflation, and electric access; the political stability of that country can expect to decrease by the following coeffcients in the table below on average. Additionally, we find that all of our coeffcients are significant past the 0.05 alpha cut off, other than the predictor electric_access which produced a p-value of 0.0585. Again, we can see that our optimal model currently explains 20.9% of the variation in political stability across the globe. 
+  
 ```{r, echo = F, message=F}
-suboptimal_linear_model <- lm(estimate ~ lit_rate + population + inflation, data = predictor_stability)
-optimal_linear_model <- lm(estimate ~ lit_rate, data = predictor_stability)
-summary(optimal_linear_model)
+optimal_model <- lm(estimate ~ population + fuel_ex + inflation + lit_rate + electric_access, data = predictor_stability)
+summary(optimal_model)
+```
+```{r, creating ratings for literacy and stability, echo=F, message=F, eval=T}
+predictor_stability%>%
+  filter_all(all_vars(.!= '#N/A')) -> predictor_stability
+attach(predictor_stability)
+
+n <- length(predictor_stability$lit_rate)
+lit_rating <- rep("Very Low", n)
+lit_rating[lit_rate > 50] = "Low"
+lit_rating[lit_rate > 92.06] = "Standard"
+lit_rating[lit_rate > 95.86] = "High"
+lit_rating[lit_rate > 99] = "Very High"
+
+
+predictor_stability['lit_rating'] = lit_rating
+
+n <- length(predictor_stability$estimate)
+estimate_rating <- rep("Very Low", n)
+estimate_rating[predictor_stability$estimate > -0.7873] = "Low"
+estimate_rating[predictor_stability$estimate > -0.2753] = "Standard"
+estimate_rating[predictor_stability$estimate > 0.2518] = "High"
+estimate_rating[predictor_stability$estimate > 1] = "Very High"
+
+predictor_stability['estimate_rating'] = estimate_rating
+
 ```
 
-# Lack of Fit Test 
+\newpage
+
+  + When we investigate the relationship between the litteracy rate and the estimate for poliitcal stability we find an interesting relationship. The trend seems to follow something that resembles a parabolic function. As litteracy rates remain low, the country maintains relatively high levels of political stability. As literacy rates increase, to where less than 50% of the country is literate, political stability in the country drops to an estimate below -1. Then as literacy rates increase past 50%, stability gradually increases on a similar relative path.
+  
+  
+```{r, echo = F,message=F}
+predictor_stability%>%
+  ggplot(aes(lit_rate, estimate)) + geom_point() + geom_smooth(se = F, color = "red", formula = y ~ log(x)) + labs(title = "The Relationship Between Political Stability and the Literacy Rate", x = "Litteracy Rate", y = "Estimate for Poltical Stability")
+
+
+predictor_stability$lit_rating <- factor(predictor_stability$lit_rating, levels = c("Very High", "High", "Standard", "Low", "Very Low"))
+predictor_stability%>%
+  ggplot(aes(lit_rating, estimate)) + geom_boxplot() + labs(title = "The Relationship Between Political Stability and the Literacy Rate", x = "Litteracy Rate Ranking", y = "Estimate for Poltical Stability")
+```
+
+\newpage
+
+## Lack of Fit Test 
   + Test assumption of linearity between political stability and literacy.
   + With a small p-value we may have evidence against linearity. This need to be further investigated. 
 ```{r, echo=F, message=F, warning=F}
@@ -329,37 +417,19 @@ full <- lm(estimate ~ as.factor(lit_rate), data = predictor_stability)
 
 anova(reduced, full)
 ```
-# Linearity investigation
+## Linearity investigation
 ```{r, echo=F, message=F, warning=F}
 ggplot(predictor_stability, aes(lit_rate, estimate)) + geom_point() + geom_smooth(se=F, method = lm)
 ```
 
-# Linearity investigation
-```{r, echo=F, message=F, warning=F}
-ggplot(predictor_stability, aes(lit_rate, log(estimate))) + geom_point() + geom_smooth(se=F, method = lm)
-```
-
-# Plotting Residuals of Optimal Model
+## Plotting Residuals of Optimal Model
 ```{r, echo=F, message=F, warning=F}
 par(mfrow = c(2,2))
-plot(optimal_linear_model)
+plot(optimal_model)
 ```
-# KNN
-```{r, echo=F, message=F, warning=F}
-predictor_stability%>%
-  filter_all(all_vars(.!= '#N/A')) -> predictor_stability
-summary(lit_rate)
-n <- length(predictor_stability$lit_rate)
-lit_rating <- rep("Very Low", n)
-lit_rating[lit_rate > 12.85] = "Low"
-lit_rating[lit_rate > 92.06] = "Standard"
-lit_rating[lit_rate > 95.86] = "High"
-lit_rating[lit_rate > 99.9] = "Very High"
 
-table(lit_rating)
-predictor_stability['lit_rating'] = lit_rating
-```
-# KNN
+\newpage
+
 ```{r, echo=F, message=F, warning=F}
 
 n = length(predictor_stability)
@@ -374,13 +444,13 @@ X.testing = stab_testing[,5:11]
 
 
 
-Y.training = lit_rating[Z]
-Y.testing = lit_rating[-Z]
+Y.training = estimate_rating[Z]
+Y.testing = estimate_rating[-Z]
 
 ```
 
-#KNN
-  + Our first round when K = 3 gives a classification accuracy rate of 30.06%
+## KNN
+  + Our first round when K = 3 gives a classification accuracy rate of the following. 
 ```{r, echo=F, message=F, warning=F}
 set.seed(100)
 library(class)
@@ -389,9 +459,9 @@ table(Y.testing, knn.results)
 mean(Y.testing == knn.results)
 ```
 
-# KNN 
+## KNN 
 
-+ A loops is then used to test our classification accuracy rate for all values of K from 1 to 20. We find that our optimal K with the highest classification accuracy rate is when K = 1 which gives a classification accuracy rate of 33.12%  
++ A loops is then used to test our classification accuracy rate for all values of K from 1 to 20. We find that our optimal K with the highest classification accuracy rate is when K = 1 which gives a classification accuracy rate of the following.  
 
 ```{r, echo=F, message=F, warning=F}
 set.seed(100)
@@ -405,5 +475,13 @@ for (K in 1:20) {
 which.max(class.rate)
 max(class.rate)
 ```
+
+```{r}
+
 ```
+
+# Findings 
+
+# Limitations and Conclusion 
+  
 
