@@ -6,11 +6,11 @@ output: pdf_document
 ---
 # Introduction: Political Stability Across the Globe 
   + Why does political stability vary across the globe? Are some nations innately built upon stability producing institutions while others are doomed, or can instability be triggered even within the most stable regimes? My research project will investigate the factors the produce political stability, or fail to, within the various countries across the globe. 
-  + There is a vast deal of research and theories that investigate the mechansims that produce political stability within a country. Many scholars will argue that the quality of a nations insitutions are responsible for the stability, or lack thereof, that a country enjoys. The difficulty falls in attempting the quatatively prove this theory. What kind of insitutions are we categorizing, how many categories will we have, who will categorize them? The list of problems that would arise from such a task would be insurmountable. With that being said, my research aims to scratch the surface of this goal. The research conducted, utilizes a large N dataset of countries and incorporates more rudemntary predictors suchas GDP and Litteracy rate in order to better understand variation in political stability. Let us be clear however that the predictors in this research are not mechanisms that produce political stability themselves. Metrics suchas a stable GDP are preceeded by the economic insitutions that provide the conditions hospitible for a stable GDP. At most, our research will provide insight into the quality of a states insitutions through our predictor metrics, which will give us some indication into the level of political stability of a country. 
+  + There is a vast deal of research and theories that investigate the mechanisms that produce political stability within a country. Many scholars will argue that the quality of a nations institutions are responsible for the stability, or lack thereof, that a country enjoys. The difficulty falls in attempting the quantitatively prove this theory. What kind of institutions are we categorizing, how many categories will we have, who will categorize them? The list of problems that would arise from such a task would be insurmountable. With that being said, my research aims to scratch the surface of this goal. The research conducted, utilizes a large N data set of countries and incorporates more rudimentary predictors such as GDP and Literacy rate in order to better understand variation in political stability. Let us be clear however that the predictors in this research are not mechanisms that produce political stability themselves. Metrics such as a stable GDP are preceded by the economic institutions that provide the conditions hospitable for a stable GDP. At most, our research will provide insight into the quality of a states institutions through our predictor metrics, which will give us some indication into the level of political stability of a country. 
   
 # The Data 
   + We will utilizes The World Bank's data set on political stability measured by the absence of violence and terrorism. The time-series data contains 213 countries and provides estimates on political stability from 1996 to 2019. The estimate of political stability ranges from -2.5 (weak stability) to 2.5 (strong stability).
-  + The data is combine with additional data from The World Bank the includes predictors: population, fuel exports, military expenditure, ease of conducting business, inflation rate, literacy rate, and access to electricity.
+  + The data is combine with additional data from The World Bank the includes predictors: population, fuel exports, military expenditure, ease of conducting business, inflation rate, literacy rate, and access to electricity. The compiled data frame is saved for additional research within this repository as compile_stability.csv. 
   
 \newpage
 
@@ -52,7 +52,7 @@ clean_stability$year <- sapply(clean_stability$year, as.numeric)
 ```
 
 # Preprocessing
-  + The data required a great deal of cleaning and pre-processing. Functions such as pivot-longer and dplyr's join functions were used to get the data in a useable format. The goal was to have the country, the country code, the year, and the estimate as variables in our dataframe. Our intial cleaned data frame contains 3969 observations with 4 variables. 
+  + The data required a great deal of cleaning and pre-processing. Functions such as pivot-longer and dplyr's join functions were used to get the data in a usable format. The goal was to have the country, the country code, the year, and the estimate as variables in our data frame. Our initial cleaned data frame contains 3969 observations with 4 variables. 
 ```{r}
 head(clean_stability)
 ```
@@ -247,8 +247,10 @@ summary(predictor_stability)
 \newpage
 
 # The New Compiled Data 
+  + Upon merging all data frames into our compiled predictor_stability data frame, we were left with 495 observations and 13 variables. This is after removing NA values that did not align to all variables within a given observation. 
 ```{r, echo=F, message=F}
 head(predictor_stability)
+dim(predictor_stability)
 ```
 
 \newpage
@@ -348,7 +350,7 @@ optimal_lasso_model <- lm(estimate ~ gdp + military_expenditure + lit_rate + ele
 summary(optimal_lasso_model)
 ```
 
-## Variable Selection and Model Building with Stepwise Variable Selection 
+## Variable Selection and Model Building with Step wise Variable Selection 
 ```{r, echo=F, message=F}
 library(olsrr)
 all_possible <- ols_step_all_possible(linear_model)
@@ -356,9 +358,9 @@ ols_step_best_subset(linear_model)
 ```
 
 ## Optimal Linear Model 
-  + Aftering fitting a model with all possible predictors as well as running lasso variable selection and stepwise variable selection, we find that our optimal model was found by our stepwise variable selection method, based on adjusted R2. Our full linear model with all predictors offers an adjusted R2 of 0.2083. Our optimal lasso model offers an adjusted R2 of 0.1059. Lastly, our optimal stepwise model with 5 predictors offers an adjusted R2 of  0.2090. This model surpasses the other adjusted R2, while offering fewer predictor variables than the inital full model. We will consider this our optimal model, containing predictors: population, fuel_ex, inflation, lit_rate, and electric_access.
+  + After fitting a model with all possible predictors as well as running lasso variable selection and step wise variable selection, we find that our optimal model was found by our step wise variable selection method, based on adjusted R2. Our full linear model with all predictors offers an adjusted R2 of 0.2083. Our optimal lasso model offers an adjusted R2 of 0.1059. Lastly, our optimal step wise model with 5 predictors offers an adjusted R2 of  0.2090. This model surpasses the other adjusted R2, while offering fewer predictor variables than the initial full model. We will consider this our optimal model, containing predictors: population, fuel_ex, inflation, lit_rate, and electric_access.
   
-  + When we investigate our optimal model, we find that our only positive coefficient is the litteracy rate. This is to say, for every unit increase in the literacy rate of a country, the politcal stability of that country can expect to increase by an average of 0.01774 units. All other coeffecients are negative indicating that for every unit increase in the population, fuel exportation, inflation, and electric access; the political stability of that country can expect to decrease by the following coeffcients in the table below on average. Additionally, we find that all of our coeffcients are significant past the 0.05 alpha cut off, other than the predictor electric_access which produced a p-value of 0.0585. Again, we can see that our optimal model currently explains 20.9% of the variation in political stability across the globe. 
+  + When we investigate our optimal model, we find that our only positive coefficient is the literacy rate. This is to say, for every unit increase in the literacy rate of a country, the political stability of that country can expect to increase by an average of 0.01774 units. All other coefficients are negative indicating that for every unit increase in the population, fuel exportation, inflation, and electric access; the political stability of that country can expect to decrease by the following coefficients in the table below on average. Additionally, we find that all of our coefficients are significant past the 0.05 alpha cut off, other than the predictor electric_access which produced a p-value of 0.0585. Again, we can see that our optimal model currently explains 20.9% of the variation in political stability across the globe. 
   
 ```{r, echo = F, message=F}
 optimal_model <- lm(estimate ~ population + fuel_ex + inflation + lit_rate + electric_access, data = predictor_stability)
@@ -392,17 +394,17 @@ predictor_stability['estimate_rating'] = estimate_rating
 
 \newpage
 
-  + When we investigate the relationship between the litteracy rate and the estimate for poliitcal stability we find an interesting relationship. The trend seems to follow something that resembles a parabolic function. As litteracy rates remain low, the country maintains relatively high levels of political stability. As literacy rates increase, to where less than 50% of the country is literate, political stability in the country drops to an estimate below -1. Then as literacy rates increase past 50%, stability gradually increases on a similar relative path.
+  + When we investigate the relationship between the literacy rate and the estimate for political stability we find an interesting relationship. The trend seems to follow something that resembles a parabolic function. As literacy rates remain low, the country maintains relatively high levels of political stability. As literacy rates increase, to where less than 50% of the country is literate, political stability in the country drops to an estimate below -1. Then as literacy rates increase past 50%, stability gradually increases on a similar relative path.
   
   
 ```{r, echo = F,message=F}
 predictor_stability%>%
-  ggplot(aes(lit_rate, estimate)) + geom_point() + geom_smooth(se = F, color = "red", formula = y ~ log(x)) + labs(title = "The Relationship Between Political Stability and the Literacy Rate", x = "Litteracy Rate", y = "Estimate for Poltical Stability")
+  ggplot(aes(lit_rate, estimate)) + geom_point() + geom_smooth(se = F, color = "red", formula = y ~ log(x)) + labs(title = "The Relationship Between Political Stability and the Literacy Rate", x = "Literacy Rate", y = "Estimate for Political Stability")
 
 
 predictor_stability$lit_rating <- factor(predictor_stability$lit_rating, levels = c("Very High", "High", "Standard", "Low", "Very Low"))
 predictor_stability%>%
-  ggplot(aes(lit_rating, estimate)) + geom_boxplot() + labs(title = "The Relationship Between Political Stability and the Literacy Rate", x = "Litteracy Rate Ranking", y = "Estimate for Poltical Stability")
+  ggplot(aes(lit_rating, estimate)) + geom_boxplot() + labs(title = "The Relationship Between Political Stability and the Literacy Rate", x = "Literacy Rate Ranking", y = "Estimate for Political Stability")
 ```
 
 \newpage
@@ -478,11 +480,27 @@ max(class.rate)
 ```
 
 ```{r}
-
+write_csv(x = predictor_stability, file = "compiled_stability")
 ```
 
 # Findings 
-
-# Limitations and Conclusion 
+  + Our optimal model explains 20.9% of the variation in political stability worldwide. Our final model included: population, fuel exports, inflation, literacy rates, and electric access as predictors. This produces the model: estimate ~ population + fuel_ex + inflation + lit_rate + electric_access. Our model results in the linear regression line: estimate = -1.141 - 1.204e-09 * population -4.156e0-03 * fuel_ex - 3.320e-02 * inflation + 1.774e-02 * lit_rate - 3.784e-03 * electric_access. 
   
+  + Our predictor variable of literacy rate is arguably the most interesting for several reasons. We found that literacy was our only positive coefficient, the relationship between literacy and stability follows a "U" pattern, and it proved to be one of most significant predictor variables based on p-value. All of our other predictor variables were significant under the 0.05 alpha level, other than our electric access variable. Furthermore, we find that our KNN modeling was effectively able to classify approximately 30% of countries as having the correct political stability ranking. 
+  
+  + Apart from our modeling, we did uncover some interesting trends within our data. To note a few of the trends: political stability in the US has decreased overtime, we did not detect a relationship between GDP per capita and political stability, GDP per capita has increase dramatically overtime as has the population globally, fuel exports globally have been decreasing since 2010, military expenditure has also decreased dramatically since 1995, and lastly literacy rates have been on a steady upward climb since 1995 but began to plateau around 2012. 
+  
+  + As noted early, the reader should be cautioned against concluding that higher literacy rates lead to higher political stability for several reasons. First, that is not what the findings show. The relationship between literacy and political stability is shown to be more complex than a linear relationship. Secondly, as discussed previously, literacy does not produce political stability. The institutions in a country make an environment more or less hospitable to a literate populace which intern may make a country more or less hospitable to political stability. 
+
+# Limitations
+  + One significant limitation is the random sample of countries that ends up in my compiled data frame after I remove NA values. The number of countries is cut in half as shown below. This could introduce a significant level of bias within my analysis as I would prefer to have kept all countries that were within the original stability data set. The data frame containing NA's was obviously not feasible for analysis and thus a sacrifice to the data set was made. 
+```{r, echo=F, message=F}
+unique(predictor_stability$country)
+```
+  + An additional limitation is the number of predictors included. As we saw, our variable selection methods performed well however our optimal model only explains 20.9% of the the variation in political stability. For further research, additional predictor variables should be added to the compiled data set and the variable selection methods should be rerun in hopes of improving the adjusted R2 of the optimal model. Ideally, metrics such as institutional performance, colonial history, and immigration policies would greatly aid the analysis and improve the performance of the model. The difficulty comes from finding reliable forms of these metrics the would merged well the existing data frame. Ideally, a more robust data set would lead our variable selection methods on a more optimal path. 
+  
+  + A final limitation comes from the methods themselves. Our optimal model remained linear, yet additional variations could have provided a better fit. For example we discovered that the relationship between stability and literacy rates seems to follow a parabolic or "U" shape. Additionally, there a more robust machine learning models other than KNN that could have been employed in order to improve the overall classification accuracy of our final output. In further research, these avenues should certainly be investigated. 
+  
+# Conclusion
+  + To conclude, our optimal model explained 20.9% of variation in political stability globally. While this was disappointing, it highlights the difficulty of the research and the areas of specific improvement in future research. Our optimal model selected 5 predictors which included: population, fuel exports, inflation, literacy rates, and electric access. All were significant at the 0.05 cutoff other than electric access. Our KNN classification model accurately classified 30% of our observations correctly. Overall, the data compiled is valuable for future research and our methods highlight avenues of strength and weakness for further investigations. 
 
